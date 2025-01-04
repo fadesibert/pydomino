@@ -26,6 +26,19 @@ class Tile:
         # left | right != right | left
         return hash(f"left:{self.left}|right{self.right}")
 
+    def __add__(self, other):
+        this_value = self.left + self.right
+        other_value = other.left + other.right
+        return this_value + other_value
+
+    def __radd__(self, other):
+        return self.left + self.right + other
+
+    def reverse(self):
+        _l = self.left
+        self.left = self.right
+        self.right = _l
+
 
 if __name__ == "__main__":
     t = Tile(left=3, right=6)
