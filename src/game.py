@@ -1,7 +1,9 @@
 from tile import Tile
 from hand import Hand, Boneyard
 from board import Board, Edge
+from player import Player, HumanPlayer
 from itertools import combinations_with_replacement
+from exceptions import NoMovesError, InvalidMoveError
 
 default_range = range(0, 7)
 default_tups = list(combinations_with_replacement(default_range, 2))
@@ -37,20 +39,53 @@ def play_tile(hand: Hand, index: int, board: Board, side: Edge | None = None) ->
     return board
 
 
-if __name__ == "__main__":
-    b = setup_boneyard()
-    print(b)
-    hand_0, hand_1 = setup_hands(b)
-    board = Board()
-    print(f"{hand_0=} {hand_0.total=}")
-    print(f"{hand_1=} {hand_1.total=}")
-    print(f"Cheating: {b=}")
-    print(board)
+def turn_loop(player: Player, board: Board, yard: Boneyard) -> tuple[Player, Board]:
+    TURN_HALT = False
+    while not TURN_HALT:
+        edges = board.edges
+        tile_idx = player.play(edges)
+        try:
+            board = play_tile(player.hand, tile_idx, board)
+            TURN_HALT = True
+        except NoMovesError:
+            player.draw(yard)
 
-    board = play_tile(hand_0, 3, board)
-    board = play_tile(hand_1, 4, board)
-    ## Randomly draw all tiles
-    # for i in range(0,36):
-    #    t = b.draw_random()
-    #    print(f'Drew: {t!r}')
-    #    print(f'Boneyard: {b!r}')
+
+def round_loop(player_1: Player, player_2: Player):
+    ROUND_HALT = False
+    b = setup_boneyard()
+    board = Board()
+    hand_0, hand_1 = setup_hands(b)
+    player_1.new_hand(hand=hand_0)
+    player_2.new_hand(hand=hand_1)
+
+    while not ROUND_HALT:
+        player_1, board = turn_loop(player_1, board, b)
+        player_2, board = turn_loop(player_2, board, b)
+        ROUND_HALT = True
+
+    p1_remain = player_1.points_in_hand
+    p2_remain = player_2.points_in_hand
+    print(f"{p1_remain=} {p2_remain=}")
+    if p1_remain == p2_remain:
+        print("DRAW!")
+    if p1_remain > p2_remain:
+        player_1.score += p2_remain
+        print(
+            f"{player_1.name} wins - round score = {p2_remain}, running score = {player_1.score=}"
+        )
+
+    elif p1_remain < p2_remain:
+        player_2.score += p1_remain
+        print(
+            f"{player_2.name} wins - round score = {p1_remain}, running score = {player_2.score=}"
+        )
+
+
+if __name__ == "__main__":
+    p1 = HumanPlayer(name="Alice")
+    p2 = HumanPlayer(name="Bob")
+    round_loop(p1, p2)
+
+    print(f"{p1.score=}")
+    print(f"{p2.score=}")

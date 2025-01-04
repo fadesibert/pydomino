@@ -23,6 +23,9 @@ class Hand:
     def __repr__(self):
         return self.list_hand()
 
+    def __iter__(self):
+        yield from self.tiles
+
     @property
     def total(self):
         return sum(self.tiles)
