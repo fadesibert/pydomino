@@ -10,7 +10,7 @@ class Hand:
             self.tiles: list[Tile | None] = list()
 
     def add_tile(self, tile: Tile):
-        pass
+        self.tiles.append(tile)
 
     def play_tile(self, tile_index: int) -> Tile:
         tile = self.tiles[tile_index]
@@ -37,6 +37,8 @@ class Boneyard(Hand):
         super().__init__(tiles)
 
     def draw_random(self):
+        if not self.tiles:
+            raise BoneyardEmptyError
         index = randrange(len(self.tiles))
         drawn_tile = self.tiles[index]
         del self.tiles[index]

@@ -16,15 +16,17 @@ class Player(ABC):
 
     def available_moves(self, edges: tuple[int, int] | None):
         if not edges:
-            return enumerate(self.hand)
-        for idx, tile in enumerate(self.hand):
-            if (
-                tile.left == edges[0]
-                or tile.left == edges[1]
-                or tile.right == edges[0]
-                or tile.right == edges[1]
-            ):
+            for idx, tile in enumerate(self.hand):
                 yield idx, tile
+        else:
+            for idx, tile in enumerate(self.hand):
+                if (
+                    tile.left == edges[0]
+                    or tile.left == edges[1]
+                    or tile.right == edges[0]
+                    or tile.right == edges[1]
+                ):
+                    yield idx, tile
 
     def draw(self, yard):
         new_tile = yard.draw_random()
@@ -39,12 +41,30 @@ class Player(ABC):
     def points_in_hand(self):
         return self.hand.total
 
+    @property
+    def domino(self) -> bool:
+        """If the player's hand is empty, this player wins the round"""
+        return len(self.hand.tiles) == 0
+
 
 class HumanPlayer(Player):
-    def play(self, edges: tuple[int] | None) -> int:
+    def play(self, edges: tuple[int] | None = None) -> int:
         a = list(self.available_moves(edges))
+        indices = [x[0] for x in a]
         print(f"Available moves: {a}")
-        breakpoint()
+        # get input and keep trying until you don't get bullshit
+        BREAK = False
+        while not BREAK:
+            input_str = input(
+                "Select a tile to play by index (99 for draw, -1 for pass): "
+            )
+            try:
+                input_int = int(input_str)
+                if input_int > 0 and input_int < 99 and input_int not in indices:
+                    raise IndexError(f"{input_int}")
+                return input_int
+            except (IndexError, ValueError):
+                print(f"Try again - I didn't like {input_str}")
 
 
 class ComputerPlayer(Player):

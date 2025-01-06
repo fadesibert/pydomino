@@ -11,6 +11,8 @@ class Edge(Enum):
 class Board:
     def __init__(self):
         self.tiles = list()
+        self.deadlock_check = 0
+        self.round_over = False
 
     @property
     def edges(self) -> tuple[int, int]:
@@ -20,12 +22,20 @@ class Board:
         right_tile = self.tiles[-1]
         return (left_tile.left, right_tile.right)
 
+    def turn_pass(self):
+        """Very crude semaphore to check for a deadlock"""
+        self.deadlock_check += 1
+        if self.deadlock_check >= 2:
+            self.round_over = True
+
     def display_board(self):
         if not self.tiles:
             return "Board Empty"
         return ":".join([repr(x) for x in self.tiles])
 
     def play_tile(self, tile: Tile, play_edge: Edge | None = None):
+        # reset the deadlock check if a tile is played
+        self.deadlock_check = 0
         current_edges = self.edges
         if not self.tiles:
             self.tiles.append(tile)

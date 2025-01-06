@@ -4,3 +4,7 @@ class NoMovesError(Exception):
 
 class InvalidMoveError(Exception):
     pass
+
+
+class BoneyardEmptyError(NoMovesError):
+    pass
