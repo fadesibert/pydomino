@@ -25,6 +25,12 @@ def setup_hands(yard: Boneyard, start_num_tiles: int = 7) -> tuple[Hand, Hand]:
 
 
 def play_tile(hand: Hand, index: int, board: Board, side: Edge | None = None) -> Board:
+    if index <= -1:
+        # Player chose to pass
+        print("Turn was passed")
+        board.turn_pass()
+        return board
+
     tile_to_play = hand.play_tile(index)
     print(f"{tile_to_play=}")
     # Catch some errors here
@@ -40,15 +46,21 @@ def play_tile(hand: Hand, index: int, board: Board, side: Edge | None = None) ->
 
 
 def turn_loop(player: Player, board: Board, yard: Boneyard) -> tuple[Player, Board]:
+    print(f"{player.name=}")
     TURN_HALT = False
     while not TURN_HALT:
         edges = board.edges
         tile_idx = player.play(edges)
         try:
+            if tile_idx == 99:
+                raise NoMovesError
             board = play_tile(player.hand, tile_idx, board)
             TURN_HALT = True
         except NoMovesError:
+            # No Moves - draw a tile
+            print("No moves found and a NoMovesError handled was thrown")
             player.draw(yard)
+    return (player, board)
 
 
 def round_loop(player_1: Player, player_2: Player):
@@ -61,21 +73,24 @@ def round_loop(player_1: Player, player_2: Player):
 
     while not ROUND_HALT:
         player_1, board = turn_loop(player_1, board, b)
+        if player_1.domino or board.round_over:
+            ROUND_HALT = True
         player_2, board = turn_loop(player_2, board, b)
-        ROUND_HALT = True
+        if player_2.domino or board.round_over:
+            ROUND_HALT = True
 
     p1_remain = player_1.points_in_hand
     p2_remain = player_2.points_in_hand
     print(f"{p1_remain=} {p2_remain=}")
     if p1_remain == p2_remain:
         print("DRAW!")
-    if p1_remain > p2_remain:
+    if p1_remain < p2_remain:
         player_1.score += p2_remain
         print(
             f"{player_1.name} wins - round score = {p2_remain}, running score = {player_1.score=}"
         )
 
-    elif p1_remain < p2_remain:
+    elif p1_remain > p2_remain:
         player_2.score += p1_remain
         print(
             f"{player_2.name} wins - round score = {p1_remain}, running score = {player_2.score=}"
